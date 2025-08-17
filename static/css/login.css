@@ -1,0 +1,73 @@
+.login-container {
+    height: 100vh;
+}
+
+.login-box {
+    background-color: var(--cor-card);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    padding: 40px;
+    box-shadow: 0 4px 20px var(--sombra-forte);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.login-title {
+    font-size: 2.5em;
+    margin-bottom: 5px;
+    color: var(--cor-principal);
+    font-weight: 700;
+}
+
+.login-subtitle {
+    font-size: 1em;
+    color: #aaa;
+    margin-bottom: 25px;
+}
+
+.form-label {
+    margin-bottom: 8px;
+    color: var(--cor-texto);
+    font-size: 0.9em;
+}
+
+.form-control {
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto);
+    font-size: 1em;
+    padding: 12px;
+}
+
+.form-control:focus {
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto);
+    border-color: var(--cor-principal);
+    box-shadow: 0 0 0 0.25rem rgba(136, 0, 240, 0.25); /* Sombra de foco atualizada */
+}
+
+.login-button {
+    padding: 12px;
+    font-size: 1.1em;
+    font-weight: 600;
+    
+    /* Cores do botão atualizadas para o tom violeta */
+    --bs-btn-bg: var(--cor-principal);
+    --bs-btn-border-color: var(--cor-principal);
+    --bs-btn-color: white; /* Alterado para branco para melhor contraste */
+    --bs-btn-hover-bg: #951cf0;
+    --bs-btn-hover-border-color: #951cf0;
+    --bs-btn-active-bg: #7a00da;
+    --bs-btn-active-border-color: #7a00da;
+}
+
+/* ESTILO DO RODAPÉ ADICIONADO */
+.footer-text {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    padding: 10px 0;
+    color: #777;
+    font-size: 0.8em;
+}

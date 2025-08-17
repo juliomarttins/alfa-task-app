@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALFA-TASK | Lançar Serviço</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .nav-link.active { color: var(--cor-principal) !important; font-weight: 600; }
+        .form-section {
+            border-left: 3px solid var(--cor-borda);
+            padding-left: 1.5rem;
+            margin-top: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom" data-bs-theme="dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{{ url_for('home_page') }}">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="ALFA-TASK Logo" style="height: 40px;">
+        </a>
+
+        <div class="d-flex">
+            <a class="btn btn-outline-secondary me-2 {% if request.endpoint == 'home_page' %}active{% endif %}" href="{{ url_for('home_page') }}">Home</a>
+            <a class="btn btn-outline-secondary me-2 {% if request.endpoint in ['dashboard', 'demand_detail', 'new_demand', 'edit_demand'] %}active{% endif %}" href="{{ url_for('dashboard') }}">Demandas Ativas</a>
+            <a class="btn btn-outline-secondary me-2 {% if request.endpoint == 'completed_demands' %}active{% endif %}" href="{{ url_for('completed_demands') }}">Demandas Concluídas</a>
+            <a class="btn btn-outline-secondary {% if request.endpoint in ['commission_tasks', 'commission_task_detail', 'new_commission_task', 'edit_commission_task'] %}active{% endif %}" href="{{ url_for('commission_tasks') }}">Serviços Feitos</a>
+        </div>
+
+        <div class="d-flex align-items-center ms-auto">
+            <a href="{{ url_for('notes') }}" class="btn btn-outline-secondary me-3 {% if request.endpoint == 'notes' %}active{% endif %}">Anotações</a>
+            <span class="navbar-text me-3">Bem-vindo, {{ current_user.username.capitalize() }}!</span>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm d-flex align-items-center" title="Sair"><i class="bi bi-box-arrow-right me-1"></i>Sair</a>
+        </div>
+    </div>
+</nav>
+    <main class="container mt-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Lançar Novo Serviço para Comissão</h4>
+            </div>
+            <div class="card-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" action="{{ url_for('create_commission_task') }}">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="external_os_number" class="form-label">Nº OS Externa</label>
+                            <input type="text" class="form-control" id="external_os_number" name="external_os_number" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="technician_id" class="form-label">Responsável</label>
+                            {% if technicians|length > 1 %}
+                                <select class="form-select" id="technician_id" name="technician_id" required>
+                                    <option value="" disabled selected>Selecione um responsável...</option>
+                                    {% for tech in technicians %}
+                                    <option value="{{ tech.id }}">{{ tech.username.capitalize() }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% else %}
+                                <input type="text" class="form-control" value="{{ technicians[0].username.capitalize() }}" readonly>
+                                <input type="hidden" name="technician_id" value="{{ technicians[0].id }}">
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="service_type" class="form-label">Tipo de Lançamento</label>
+                            <select class="form-select" id="service_type" name="service_type" required>
+                                <option value="" disabled selected>Selecione um tipo...</option>
+                                <option value="Serviço">Serviço</option>
+                                <option value="Orçamento">Orçamento</option>
+                                <option value="Venda">Venda</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="service-section" class="form-section d-none">
+                        <h5>Detalhes do Serviço</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Serviços Pré-definidos (selecione um ou mais)</label>
+                            <div class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                                {% for service in predefined_services %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="predefined_services" value="{{ service.id }}" id="service-{{ service.id }}">
+                                    <label class="form-check-label" for="service-{{ service.id }}">{{ service.name }} (Peso: {{ service.weight }})</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Observações (Opcional)</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div id="budget-section" class="form-section d-none">
+                        <h5>Detalhes do Orçamento</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Equipamentos Orçados (selecione um ou mais)</label>
+                            {% set equipments = ['Impressora G', 'PC Gamer', 'Notebook', 'Servidor', 'All in one', 'Nobreak', 'PC Comum', 'Impressora P'] %}
+                            <div class="border rounded p-2">
+                                {% for item in equipments %}
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="budget_equipment" value="{{ item }}" id="equip-{{ loop.index }}">
+                                    <label class="form-check-label" for="equip-{{ loop.index }}">{{ item }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                         <div class="mb-3">
+                            <label for="budget_notes" class="form-label">Notas do Orçamento (Opcional)</label>
+                            <textarea class="form-control" id="budget_notes" name="budget_notes" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <div id="sale-section" class="form-section d-none">
+                        <h5>Detalhes da Venda</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Itens Vendidos (selecione um ou mais)</label>
+                            {% set sale_item_options = ['Notebook Usado', 'PC Usado', 'Impressora', 'Monitor', 'Teclado', 'Mouse', 'SSD', 'Memória RAM', 'Fonte'] %}
+                            <div class="border rounded p-3">
+                                <div class="row">
+                                    {% for item in sale_item_options %}
+                                    <div class="col-md-4 col-sm-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="sale_items" value="{{ item }}" id="sale-{{ loop.index }}">
+                                            <label class="form-check-label" for="sale-{{ loop.index }}">{{ item }}</label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <hr>
+                                <label for="other_sale_items" class="form-label mt-2">Outros itens (separados por vírgula):</label>
+                                <input type="text" class="form-control" id="other_sale_items" name="sale_items" placeholder="Cabo HDMI, Adaptador Wifi...">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="commission_value" class="form-label">Valor Total da Venda (R$)</label>
+                                <input type="number" step="0.01" class="form-control" id="commission_value" name="commission_value" placeholder="Ex: 2500.00">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="sale_notes" class="form-label">Notas da Venda (Opcional)</label>
+                            <textarea class="form-control" id="sale_notes" name="sale_notes" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-4">
+                        <a href="{{ url_for('commission_tasks') }}" class="btn btn-secondary me-2">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">Lançar Serviço</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.getElementById('service_type').addEventListener('change', function() {
+            const serviceSection = document.getElementById('service-section');
+            const budgetSection = document.getElementById('budget-section');
+            const saleSection = document.getElementById('sale-section');
+
+            // Esconde todas as seções
+            serviceSection.classList.add('d-none');
+            budgetSection.classList.add('d-none');
+            saleSection.classList.add('d-none');
+
+            // Mostra a seção correspondente
+            if (this.value === 'Serviço') {
+                serviceSection.classList.remove('d-none');
+            } else if (this.value === 'Orçamento') {
+                budgetSection.classList.remove('d-none');
+            } else if (this.value === 'Venda') {
+                saleSection.classList.remove('d-none');
+            }
+        });
+    </script>
+</body>
+</html>

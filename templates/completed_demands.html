@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALFA-TASK | Demandas Concluídas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .navbar-brand img { height: 40px; width: auto; }
+        .navbar-brand, .nav-link { color: var(--cor-texto) !important; }
+        .nav-link.active { color: var(--cor-principal) !important; font-weight: 600; }
+        
+        .table {
+            --bs-table-bg: transparent;
+            --bs-table-border-color: var(--cor-borda);
+            --bs-table-hover-bg: rgba(255, 255, 255, 0.07);
+        }
+        .table th {
+            font-weight: 600;
+            color: var(--cor-texto);
+            text-transform: uppercase;
+            font-size: 0.8em;
+            letter-spacing: 0.5px;
+            border-bottom-width: 2px;
+        }
+        .table td { vertical-align: middle; padding: 1rem; }
+        .table tbody tr { border-bottom: 1px solid var(--cor-borda); }
+        .table tbody tr:last-child { border-bottom: none; }
+        .table tbody tr:hover { cursor: pointer; }
+
+        .demand-title a { text-decoration: none; color: var(--cor-texto); font-weight: 500; }
+        .demand-title a:hover { color: var(--cor-principal); }
+        .status-concluido { background-color: #198754; }
+        .status-badge { padding: 0.4em 0.85em; font-size: 0.8em; font-weight: 600; color: #fff !important; border-radius: 6px; }
+        .filters-panel { background-color: rgba(0,0,0,0.15); border: 1px solid var(--cor-borda); border-radius: 8px; padding: 1.25rem; }
+        .pagination .page-item.active .page-link { background-color: var(--cor-principal); border-color: var(--cor-principal); }
+        .pagination .page-link { color: var(--cor-principal); }
+        .pagination .page-link:hover { background-color: #951cf0; color: #fff; }
+    </style>
+</head>
+<body>
+ <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom" data-bs-theme="dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{{ url_for('home_page') }}">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="ALFA-TASK Logo" style="height: 40px;">
+        </a>
+
+        <div class="d-flex">
+            <a class="btn btn-outline-secondary me-2 {% if request.endpoint == 'home_page' %}active{% endif %}" href="{{ url_for('home_page') }}">Home</a>
+            <a class="btn btn-outline-secondary me-2 {% if request.endpoint in ['dashboard', 'demand_detail', 'new_demand', 'edit_demand'] %}active{% endif %}" href="{{ url_for('dashboard') }}">Demandas Ativas</a>
+            <a class="btn btn-outline-secondary me-2 {% if request.endpoint == 'completed_demands' %}active{% endif %}" href="{{ url_for('completed_demands') }}">Demandas Concluídas</a>
+            <a class="btn btn-outline-secondary {% if request.endpoint in ['commission_tasks', 'commission_task_detail', 'new_commission_task', 'edit_commission_task'] %}active{% endif %}" href="{{ url_for('commission_tasks') }}">Serviços Feitos</a>
+        </div>
+
+        <div class="d-flex align-items-center ms-auto">
+            <a href="{{ url_for('notes') }}" class="btn btn-outline-secondary me-3 {% if request.endpoint == 'notes' %}active{% endif %}">Anotações</a>
+            <span class="navbar-text me-3">Bem-vindo, {{ current_user.username.capitalize() }}!</span>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm d-flex align-items-center" title="Sair"><i class="bi bi-box-arrow-right me-1"></i>Sair</a>
+        </div>
+    </div>
+</nav>
+    <main class="container mt-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h4 mb-0">Painel de Demandas Concluídas</h2>
+                </div>
+
+                <div class="filters-panel mb-4">
+                    <form method="GET" action="{{ url_for('completed_demands') }}" class="row g-3 align-items-center">
+                        <div class="col-md-5">
+                            <label for="assigned_to_id" class="form-label visually-hidden">Responsável</label>
+                            <select name="assigned_to_id" id="assigned_to_id" class="form-select">
+                                <option value="">Todos os Responsáveis</option>
+                                {% for user in users %}
+                                    <option value="{{ user.id }}" {% if user.id|string == user_filter %}selected{% endif %}>{{ user.username.capitalize() }}</option>
+                                {% endfor %}
+                                <option value="unassigned" {% if 'unassigned' == user_filter %}selected{% endif %}>Ninguém (N/A)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="start_date" class="form-label visually-hidden">Data Início</label>
+                            <input type="date" class="form-control" name="start_date" value="{{ start_date or '' }}" placeholder="Data Início">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="end_date" class="form-label visually-hidden">Data Fim</label>
+                            <input type="date" class="form-control" name="end_date" value="{{ end_date or '' }}" placeholder="Data Fim">
+                        </div>
+                        <div class="col-md-3 d-grid d-md-flex gap-2">
+                            <button type="submit" class="btn btn-info w-100">Filtrar</button>
+                            <a href="{{ url_for('completed_demands') }}" class="btn btn-secondary w-100" title="Limpar Filtros"><i class="bi bi-x-lg"></i></a>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Título</th>
+                                <th>Status</th>
+                                <th>Prioridade</th>
+                                <th>Responsável</th>
+                                <th>Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for demand in demands.items %}
+                            <tr onclick="window.location='{{ url_for('demand_detail', demand_id=demand.id) }}';">
+                                <td><strong>{{ demand.demand_number }}</strong></td>
+                                <td class="demand-title"><a href="{{ url_for('demand_detail', demand_id=demand.id) }}">{{ demand.title }}</a></td>
+                                <td>
+                                    <span class="status-badge status-concluido">{{ demand.status }}</span>
+                                </td>
+                                <td><span>{{ demand.priority }}</span></td>
+                                <td>{{ demand.assigned_to.username.capitalize() if demand.assigned_to else 'N/A' }}</td>
+                                <td>{{ demand.created_at | localdatetime('%d/%m/%Y') }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="6" class="text-center py-5">Nenhuma demanda concluída encontrada com os filtros aplicados.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if demands.pages > 1 %}
+                <nav>
+                    <ul class="pagination justify-content-center mt-4">
+                        <li class="page-item {% if not demands.has_prev %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('completed_demands', page=demands.prev_num, assigned_to_id=user_filter, start_date=start_date, end_date=end_date) }}">Anterior</a>
+                        </li>
+                        {% for page_num in demands.iter_pages() %}
+                            {% if page_num %}
+                                {% if demands.page == page_num %}
+                                    <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
+                                {% else %}
+                                    <li class="page-item"><a class="page-link" href="{{ url_for('completed_demands', page=page_num, assigned_to_id=user_filter, start_date=start_date, end_date=end_date) }}">{{ page_num }}</a></li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+                            {% endif %}
+                        {% endfor %}
+                        <li class="page-item {% if not demands.has_next %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('completed_demands', page=demands.next_num, assigned_to_id=user_filter, start_date=start_date, end_date=end_date) }}">Próximo</a>
+                        </li>
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

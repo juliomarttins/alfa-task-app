@@ -1,0 +1,25 @@
+# Arquivos de ambiente virtual
+venv/
+/venv
+.venv
+
+# Arquivos de cache do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Arquivos de banco de dados SQLite (se usar para testes)
+*.sqlite3
+
+# Pasta de instância do Flask
+/instance
+
+# Arquivos de dependências do Poetry (se usar)
+poetry.lock
+.pdm.toml
+
+# Arquivos de IDE
+.vscode/
+.idea/
+*.swp
