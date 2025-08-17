@@ -8,13 +8,21 @@ from functools import wraps
 import click
 import pytz
 import math
+import os # <-- IMPORTANTE: Adicionado
 from sqlalchemy import func
 
 app = Flask(__name__)
 
 # --- CONFIGURAÇÃO ---
-app.config['SECRET_KEY'] = 'uma-chave-secreta-muito-segura-e-dificil-de-adivinhar'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:alfa%402025@localhost:5432/alfa_task_db'
+# Agora, as configurações usam as variáveis de ambiente que definimos no Render
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'uma-chave-secreta-para-desenvolvimento')
+
+# Lógica para usar o banco de dados do Render em produção e o local em desenvolvimento
+uri = os.environ.get('DATABASE_URL')
+if uri and uri.startswith("postgres://"):
+    uri = uri.replace("postgres://", "postgresql://", 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = uri or 'postgresql://postgres:alfa%402025@localhost:5432/alfa_task_db'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # --- CONSTANTES ---
